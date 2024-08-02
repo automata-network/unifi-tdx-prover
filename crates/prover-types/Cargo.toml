@@ -1,0 +1,12 @@
+[package]
+name = "prover-types"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+revm.workspace = true
+ethers-core.workspace = true
+hex.workspace = true
+rlp.workspace = true
+serde.workspace = true
+jsonrpsee.workspace = true
