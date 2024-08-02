@@ -1,7 +1,7 @@
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use serde::{Deserialize, Serialize};
 
-use crate::Pob;
+use crate::{Pob, H256};
 
 #[rpc(server, client, namespace = "prover")]
 pub trait ProverApi {
@@ -11,7 +11,13 @@ pub trait ProverApi {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProveReq {
+    // `pob` and `client`, at least one must be provided
+    // if both are provided, `pob` will be used.
+
+    // execute the blocks based on the Pob
     pub pob: Option<Pob>,
+    // generate the pob based on the execution node
+    // and then executes the blocks
     pub client: Option<ProveByExecutionNode>,
 }
 
@@ -23,4 +29,6 @@ pub struct ProveByExecutionNode {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct ProveResp {}
+pub struct ProveResp {
+    pub new_state_root: H256,
+}

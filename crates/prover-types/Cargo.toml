@@ -9,4 +9,5 @@ ethers-core.workspace = true
 hex.workspace = true
 rlp.workspace = true
 serde.workspace = true
-jsonrpsee.workspace = true
+
+jsonrpsee = { workspace = true, features = ["client", "server", "macros"] }
