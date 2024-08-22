@@ -1,0 +1,17 @@
+[package]
+name = "executor"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+base.workspace = true
+log.workspace = true
+lazy_static.workspace = true
+
+raiko-lib.workspace = true
+reth-evm.workspace = true
+reth-chainspec.workspace = true
+reth-primitives.workspace = true
+reth-evm-ethereum.workspace = true
+alloy-rlp.workspace = true
+

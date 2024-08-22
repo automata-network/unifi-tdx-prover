@@ -1,0 +1,8 @@
+[package]
+name = "guest-input-to-proof-request"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+prover.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,22 @@
+[package]
+name = "prover"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+base.workspace = true
+log.workspace = true
+executor.workspace = true
+
+serde.workspace = true
+serde_json.workspace = true
+secp256k1.workspace = true
+
+reth-primitives.workspace = true
+raiko-lib.workspace = true
+reth-evm.workspace = true
+reth-evm-ethereum.workspace = true
+alloy-rlp.workspace = true
+alloy-sol-types.workspace = true
+
+jsonrpsee = { workspace = true, features = ["client", "server", "macros"] }

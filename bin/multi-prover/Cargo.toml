@@ -1,0 +1,13 @@
+[package]
+name = "multi-prover"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+prover.workspace = true
+executor.workspace = true
+env_logger.workspace = true
+log.workspace = true
+secp256k1.workspace = true
+rand.workspace = true
+actix-web = "4.9.0"
