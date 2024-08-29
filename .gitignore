@@ -17,3 +17,18 @@ Cargo.lock
 # Added by cargo
 
 /target
+
+
+# Compiler files
+contracts/cache/
+contracts/out/
+
+# Ignores development broadcast logs
+contracts/broadcast/*/31337/
+contracts/broadcast/**/dry-run/
+
+# Docs
+contracts/docs/
+
+# Dotenv file
+contracts/.env
