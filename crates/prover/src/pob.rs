@@ -9,7 +9,7 @@ use reth_evm_ethereum::taiko::TaikoData;
 use reth_primitives::{keccak256, Address, Block, Bytes, Header, B256, U256};
 use serde::{Deserialize, Serialize};
 
-use crate::ProofInput;
+use crate::{ProofInput, ProofTaikoInput};
 use executor::BlockDataProvider;
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
@@ -34,8 +34,14 @@ pub struct PobData {
 
     // required by TaikoData
     pub l2_contract: Option<Address>,
-    pub l1_header: Option<Header>,
+    pub l1_header: Header,
     pub l2_parent_header: Header,
+
+    // required by proof
+    pub graffiti: B256,
+    pub l1_contract: Option<Address>,
+    pub prover: Address, // input.taiko.prover_data.prover
+    pub parent_meta_hash: B256, // input.taiko.metadata.parentMetaHash
 }
 
 impl From<ProofInput> for Pob {
@@ -58,9 +64,13 @@ impl From<ProofInput> for Pob {
             mpt_nodes: value.parent_state_trie,
             storage_mpt_nodes,
             codes: value.contracts,
-            l1_header: value.l1_header,
+            l1_header: value.taiko.l1_header,
+            l1_contract: value.chain_spec.l1_contract,
             l2_contract: value.chain_spec.l2_contract,
             l2_parent_header: value.parent_header,
+            graffiti: value.taiko.prover_data.graffiti,
+            prover: value.taiko.prover_data.prover,
+            parent_meta_hash: value.taiko.metadata.parentMetaHash,
         };
         Self {
             block: value.l2_block,
@@ -73,7 +83,6 @@ pub fn guest_input_to_proof_input(input: GuestInput) -> Result<ProofInput, Strin
     let pi = ProtocolInstance::new(&input, &input.block.header, VerifierType::SGX)
         .map_err(|err| err.to_string())?;
     Ok(ProofInput {
-        meta: pi.block_metadata,
         l2_block: input.block,
         parent_header: input.parent_header,
         chain_spec: input.chain_spec,
@@ -81,7 +90,11 @@ pub fn guest_input_to_proof_input(input: GuestInput) -> Result<ProofInput, Strin
         parent_storage: input.parent_storage,
         contracts: input.contracts,
         ancestor_headers: input.ancestor_headers,
-        l1_header: Some(input.taiko.l1_header),
+        taiko: ProofTaikoInput {
+            l1_header: input.taiko.l1_header,
+            metadata: pi.block_metadata,
+            prover_data: input.taiko.prover_data,
+        },
     })
 }
 
@@ -103,9 +116,13 @@ impl From<GuestInput> for Pob {
             mpt_nodes: value.parent_state_trie,
             storage_mpt_nodes,
             codes: value.contracts,
-            l1_header: Some(value.taiko.l1_header),
+            l1_header: value.taiko.l1_header,
+            l1_contract: value.chain_spec.l1_contract,
             l2_parent_header: value.parent_header,
             l2_contract: value.chain_spec.l2_contract,
+            graffiti: value.taiko.prover_data.graffiti,
+            parent_meta_hash: value.taiko.block_proposed.meta.parentMetaHash,
+            prover: value.taiko.prover_data.prover
         };
         Self {
             block: value.block,
@@ -120,7 +137,7 @@ impl BlockDataProvider for Pob {
     fn ext_data(&self) -> Self::ExtData {
         TaikoData {
             l2_contract: self.data.l2_contract.unwrap_or_default(),
-            l1_header: self.data.l1_header.clone().unwrap_or_default(),
+            l1_header: self.data.l1_header.clone(),
             parent_header: self.data.l2_parent_header.clone(),
         }
     }

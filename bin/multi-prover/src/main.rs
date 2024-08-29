@@ -3,9 +3,8 @@ use actix_web::{
     web::{Data, Json, JsonConfig},
     App, HttpResponse, HttpServer, Responder,
 };
-use prover::{guest_input_to_proof_input, ProofRequest, Prover};
+use prover::{guest_input_to_proof_input, Keypair, ProofRequest, Prover};
 use prover::{GuestInput, ProverV1ApiServer};
-use rand::thread_rng;
 
 #[post("/debug/gen_proof_by_guest_input")]
 async fn gen_proof_by_guest_input(prover: Data<Prover>, req: Json<GuestInput>) -> impl Responder {
@@ -32,10 +31,9 @@ async fn main() -> std::io::Result<()> {
         .format_timestamp_millis()
         .init();
 
-    let (sk, _) = secp256k1::generate_keypair(&mut thread_rng());
-    // let prover = Arc::new(Prover::new(sk));
+    let kp = Keypair::new();
     HttpServer::new(move || {
-        let prover = Prover::new(sk);
+        let prover = Prover::new(kp.clone());
 
         App::new()
             .app_data(JsonConfig::default().limit(100 << 20))
