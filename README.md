@@ -29,18 +29,22 @@ end
 ### ProverRegistry
 
 Verify the attestation provided by the Prover and register the instance, then validate the Prover’s generated PoE.
+* Register the prover to the chain with the attestation report
+* Verify the PoE that it's signed by the attested prover
+* Prevents the attestation report from being replayed and pre-generated
+* Ephemeral key rotation
 
 ### AttestationVerifier
 
-Attesation Verification Portal Contract for verify different kinds of attestation report.
+Attesation Verification Contract for verify different kinds of attestation report.
 
-TDX Attestation Verifier Contract: [0xefE368b17D137E86298eec8EbC5502fb56d27832](https://explorer-testnet.ata.network/address/0xefE368b17D137E86298eec8EbC5502fb56d27832)
+* Predeployed TDX Attestation Verifier Contract: [0xefE368b17D137E86298eec8EbC5502fb56d27832](https://explorer-testnet.ata.network/address/0xefE368b17D137E86298eec8EbC5502fb56d27832)
 
 ## Services
 
 ### multi-prover
 
-The Prover Service.
+The Prover Service.  
 Compile Command: `cargo build --release --bin multi-prover`.
 
 ### proof-submitter
@@ -63,6 +67,10 @@ $ ls -l testdata/proof-request-ethereum-20335518.json
 
 ## Getting started on non-TEE environment
 
+*Note*: The prover can run on a non-TEE environment but cannot generate a valid attestation report. In this cases, the contracts needs to enable mock mode to support accepting a fake attestation report, can check two parts of code:
+* [AttestationVerifier.sol](contracts/src/core/AttestationVerifier.sol#L21)
+* [multi-prover/main.rs](bin/multi-prover/src/main.rs#L88-L92)
+
 ### Contract Deployment
 
 1. Follow the instruction on the [foundry installation](https://book.getfoundry.sh/getting-started/installation) to install `forge`, `anvil`
@@ -72,6 +80,8 @@ $ ls -l testdata/proof-request-ethereum-20335518.json
 4. Deploy contracts
 ```
 $ ATTESTATION=0x0000000000000000000000000000000000000000 ENV=localhost CHAIN_ID=1 VERSION=1 ./scripts/deploy_verifier.sh deploy
+$ # ATTESTATION=0x0000000000000000000000000000000000000000: enable the mock mode on ProverRegistry.
+$ # CHAIN_ID=1: the target chain id that the prover want to prove
 ...
 {
   "AttestationVerifier": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -110,6 +120,8 @@ $ cargo run --release --bin proof-submitter -- -c config/localhost_mock.json tes
 ```
 
 ## Getting started on TDX VM
+
+*Note*: Currently we support performing the on-chain attestation verification on automata testnet. Next we can migrate the services/contract to holesky.
 
 1. Follow the instruction on the [foundry installation](https://book.getfoundry.sh/getting-started/installation) to install `forge`
 2. Go to `contracts` directory and run `forge install`.

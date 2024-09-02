@@ -35,27 +35,4 @@ contract AttestationVerifier {
 
         if (quoteBodyLast32 != _userData) revert REPORT_DATA_MISMATCH();
     }
-
-    function extractQuoteBody(
-        bytes memory data
-    ) public pure returns (bytes memory) {
-        uint256 offset = 0;
-
-        // Skip quoteVersion (2 bytes)
-        offset += 2;
-        // Skip tee (4 bytes)
-        offset += 4;
-        // Skip tcbStatus (1 byte)
-        offset += 1;
-        // Skip fmspcBytes (6 bytes)
-        offset += 6;
-
-        // Extract quoteBody (remaining bytes)
-        bytes memory quoteBody = new bytes(64);
-        for (uint256 i = 0; i < quoteBody.length; i++) {
-            quoteBody[i] = data[offset + i];
-        }
-
-        return quoteBody;
-    }
 }
