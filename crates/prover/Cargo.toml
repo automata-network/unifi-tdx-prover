@@ -5,6 +5,7 @@ version.workspace = true
 
 [dependencies]
 base.workspace = true
+tee.workspace = true
 log.workspace = true
 executor.workspace = true
 

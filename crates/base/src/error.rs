@@ -102,6 +102,17 @@ macro_rules! stack_error {
                 })
             }
             )*
+
+            pub fn origin(&self) -> &Self {
+                let mut err = self;
+                loop {
+                    match err {
+                        Self::Stack{ origin, .. } => err = origin,
+                        _ => break,
+                    }
+                }
+                err
+            }
         }
     }
 }

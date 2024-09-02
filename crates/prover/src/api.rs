@@ -66,7 +66,7 @@ pub struct ProofResponse {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    
 
     #[test]
     pub fn test_run() {}

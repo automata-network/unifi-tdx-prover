@@ -24,13 +24,12 @@ contract AttestationVerifier {
             .verifyAndAttestOnChain(_report);
         if (!succ) revert INVALID_REPORT();
 
-        bytes memory quoteBody = extractQuoteBody(output);
-        if (quoteBody.length < 32) revert INVALID_REPORT_DATA();
+        if (output.length < 32) revert INVALID_REPORT_DATA();
 
         bytes32 quoteBodyLast32;
         assembly {
             quoteBodyLast32 := mload(
-                add(add(quoteBody, 0x20), sub(mload(quoteBody), 32))
+                add(add(output, 0x20), sub(mload(output), 32))
             )
         }
 
@@ -52,7 +51,7 @@ contract AttestationVerifier {
         offset += 6;
 
         // Extract quoteBody (remaining bytes)
-        bytes memory quoteBody = new bytes(data.length - offset);
+        bytes memory quoteBody = new bytes(64);
         for (uint256 i = 0; i < quoteBody.length; i++) {
             quoteBody[i] = data[offset + i];
         }

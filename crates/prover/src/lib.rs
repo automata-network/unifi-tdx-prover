@@ -9,6 +9,3 @@ pub use poe::*;
 
 mod prove;
 pub use prove::*;
-
-mod keypair;
-pub use keypair::*;

@@ -11,6 +11,7 @@ version = "0.1.0"
 prover = { path = "crates/prover" }
 base = { path = "crates/base" }
 executor = { path = "crates/executor" }
+tee = { path = "crates/tee" }
 
 # rpc
 jsonrpsee = "0.23"
@@ -44,7 +45,10 @@ sp1-sdk = {  version = "1.0.1" }
 sp1-zkvm = {  version = "1.0.1" }
 sp1-helper = {  version = "1.0.1" }
 
+tdx-guest = { git = "https://github.com/intel/tdx-guest" }
+
 # alloy
+alloy = { version = "0.2", default-features = false, features = ["std", "providers", "reqwest-rustls-tls", "signer-local", "rpc-types", "consensus", "hyper", "sol-types", "json"] }
 alloy-rlp = { version = "0.3.4", default-features = false }
 alloy-rlp-derive = { version = "0.3.4", default-features = false }
 alloy-core = { version = "0.7.2", default-features = false }
@@ -166,6 +170,7 @@ rand_core = "0.6.4"
 dirs = "5.0.1"
 pathdiff = "0.2.1"
 dotenv = "0.15.0"
+ethers = "2.0"
 
 [patch.crates-io]
 revm = { git = "https://github.com/taikoxyz/revm.git", branch = "v36-taiko" }

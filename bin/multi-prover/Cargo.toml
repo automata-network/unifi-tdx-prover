@@ -3,6 +3,10 @@ name = "multi-prover"
 edition.workspace = true
 version.workspace = true
 
+[features]
+default = []
+tdx = []
+
 [dependencies]
 prover.workspace = true
 executor.workspace = true
@@ -11,3 +15,10 @@ log.workspace = true
 secp256k1.workspace = true
 rand.workspace = true
 actix-web = "4.9.0"
+base.workspace = true
+hex.workspace = true
+tee.workspace = true
+alloy.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true

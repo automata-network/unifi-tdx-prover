@@ -15,7 +15,7 @@ interface IProverRegistry {
     struct ProverInstance {
         address addr;
         uint256 validUntil;
-        TEEType teeType;
+        uint256 teeType; // 1: IntelTDX
     }
 
     struct Poe {
@@ -30,7 +30,7 @@ interface IProverRegistry {
         uint256 id;
         address newInstance;
         bytes signature;
-        TEEType teeType;
+        uint256 teeType; // 1: IntelTDX
     }
 
     struct Proof {
@@ -38,16 +38,12 @@ interface IProverRegistry {
         Context ctx;
     }
 
-    enum TEEType {
-        INTEL_TDX,
-        AMD_SEV_SNP
-    }
-
     struct ReportData {
         address addr;
-        TEEType teeType;
+        uint256 teeType;
         uint256 referenceBlockNumber;
         bytes32 referenceBlockHash;
+        bytes32 binHash;
     }
 
     error INVALID_BLOCK_NUMBER();
@@ -56,6 +52,13 @@ interface IProverRegistry {
     error REPORT_USED();
     error INVALID_PROVER_INSTANCE();
     error PROVER_TYPE_MISMATCH();
+    error INVALID_REPORT();
+    error INVALID_REPORT_DATA();
+    error REPORT_DATA_MISMATCH();
+    error PROVER_INVALID_INSTANCE_ID(uint256);
+    error PROVER_INVALID_ADDR(address);
+    error PROVER_ADDR_MISMATCH(address, address);
+    error PROVER_OUT_OF_DATE(uint256);
 
     event InstanceAdded(
         uint256 indexed id,
@@ -63,6 +66,7 @@ interface IProverRegistry {
         address replaced,
         uint256 validUntil
     );
+    event VerifyProof(uint256 proofs);
 
     /// @notice register prover instance with quote
     function register(
@@ -72,10 +76,10 @@ interface IProverRegistry {
 
     /// TODO: should we need to add teeType?
     /// @notice validate whether the prover with (instanceID, address)
-    function isProverValid(
-        uint256 _id,
-        address _instance
-    ) external view returns (bool);
+    function checkProver(
+        uint256 _instanceID,
+        address _proverAddr
+    ) external view returns (ProverInstance memory);
 
     /// TODO: each proof should coming from different teeType
     /// @notice verify multiple proofs in one call

@@ -6,3 +6,8 @@ version.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+
+alloy.workspace = true
+secp256k1.workspace = true
+url.workspace = true
+log.workspace = true

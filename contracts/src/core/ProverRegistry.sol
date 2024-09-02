@@ -9,10 +9,10 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 contract ProverRegistry is OwnableUpgradeable, IProverRegistry {
 
     AttestationVerifier public verifier;
-    uint256 public attestValiditySeconds = 3600;
-    uint256 public maxBlockNumberDiff = 25;
+    uint256 public attestValiditySeconds;
+    uint256 public maxBlockNumberDiff;
+    uint256 public chainID;
     uint256 public nextInstanceId = 0;
-    uint256 public chainID = 0;
 
     mapping(bytes32 reportHash => bool used) public attestedReports;
     mapping(uint256 proverInstanceID => ProverInstance) public attestedProvers;
@@ -26,10 +26,14 @@ contract ProverRegistry is OwnableUpgradeable, IProverRegistry {
     function initialize(
         address _initialOwner,
         address _verifierAddr,
-        uint256 _chainID
+        uint256 _chainID,
+        uint256 _attestValiditySeconds,
+        uint256 _maxBlockNumberDiff
     ) public initializer {
         verifier = AttestationVerifier(_verifierAddr);
         chainID = _chainID;
+        attestValiditySeconds = _attestValiditySeconds;
+        maxBlockNumberDiff = _maxBlockNumberDiff;
         _transferOwnership(_initialOwner);
     }
 
@@ -37,10 +41,14 @@ contract ProverRegistry is OwnableUpgradeable, IProverRegistry {
         uint8 i,
         address _initialOwner,
         address _verifierAddr,
-        uint256 _chainID
+        uint256 _chainID,
+        uint256 _attestValiditySeconds,
+        uint256 _maxBlockNumberDiff
     ) public reinitializer(i) {
         verifier = AttestationVerifier(_verifierAddr);
         chainID = _chainID;
+        attestValiditySeconds = _attestValiditySeconds;
+        maxBlockNumberDiff = _maxBlockNumberDiff;
         _transferOwnership(_initialOwner);
     }
 
@@ -58,7 +66,7 @@ contract ProverRegistry is OwnableUpgradeable, IProverRegistry {
         if (attestedReports[reportHash]) revert REPORT_USED();
         attestedReports[reportHash] = true;
 
-        uint256 instanceID = nextInstanceId;
+        uint256 instanceID = nextInstanceId+1;
         nextInstanceId += 1;
 
         uint256 validUnitl = block.timestamp + attestValiditySeconds;
@@ -71,53 +79,61 @@ contract ProverRegistry is OwnableUpgradeable, IProverRegistry {
         emit InstanceAdded(instanceID, _data.addr, address(0), validUnitl);
     }
 
-    /// TODO: should we need to add teeType?
-    /// @notice validate whether the prover with (instanceID, address)
-    function isProverValid(
-        uint256 _id,
-        address _instance
-    ) external view returns (bool) {
-        (bool valid, ) = _isProverValid(_id, _instance);
-        return valid;
-    }
-
     /// TODO: each proof should coming from different teeType
     /// @notice verify multiple proofs in one call
     function verifyProofs(Proof[] calldata _proofs) external {
+        require(_proofs.length >= 1, "missing proofs");
         for (uint i = 0; i < _proofs.length; i++) {
-            address oldInstance = ECDSA.recover(
-                getSignedHash(
-                    _proofs[i].poe.poe,
-                    _proofs[i].poe.newInstance,
-                    _proofs[i].ctx.prover,
-                    _proofs[i].ctx.metaHash
-                ),
-                _proofs[i].poe.signature
+            IProverRegistry.SignedPoe calldata poe = _proofs[i].poe;
+            address oldInstance = recoverOldInstance(
+                poe.poe,
+                poe.newInstance,
+                _proofs[i].ctx.prover,
+                _proofs[i].ctx.metaHash,
+                poe.signature
             );
 
-            _replaceInstance(
-                _proofs[i].poe.id,
-                _proofs[i].poe.teeType,
-                oldInstance,
-                _proofs[i].poe.newInstance
-            );
+
+            ProverInstance memory prover = checkProver(poe.id, oldInstance);
+            if (poe.teeType != prover.teeType) revert PROVER_TYPE_MISMATCH();
+            if (oldInstance != poe.newInstance) {
+                attestedProvers[poe.id].addr = poe.newInstance;
+                emit InstanceAdded(poe.id, oldInstance, poe.newInstance, prover.validUntil);
+            }
         }
+
+        emit VerifyProof(_proofs.length);
     }
 
-    /// @notice key rotation for a prover instance
-    function _replaceInstance(
-        uint256 _id,
-        TEEType _type,
-        address _old,
-        address _new
-    ) private {
-        (bool valid, ProverInstance memory prover) = _isProverValid(_id, _old);
-        if (!valid) revert INVALID_PROVER_INSTANCE();
-        if (_type != prover.teeType) revert PROVER_TYPE_MISMATCH();
-        if (_old != _new) {
-            attestedProvers[_id].addr = _new;
-            emit InstanceAdded(_id, _old, _new, prover.validUntil);
-        }
+    function recoverOldInstance(
+        Poe memory _poe,
+        address _newInstance,
+        address _prover,
+        bytes32 _metaHash,
+        bytes memory _signature
+    ) public view returns (address) {
+        return ECDSA.recover(
+            getSignedHash(
+                _poe,
+                _newInstance,
+                _prover,
+                _metaHash
+            ),
+            _signature
+        );
+    }
+
+    function checkProver(
+        uint256 _instanceID,
+        address _proverAddr
+    ) public view returns (ProverInstance memory) {
+        ProverInstance memory prover;
+        if (_instanceID == 0) revert PROVER_INVALID_INSTANCE_ID(_instanceID);
+        if (_proverAddr == address(0)) revert PROVER_INVALID_ADDR(_proverAddr);
+        prover = attestedProvers[_instanceID];
+        if (prover.addr != _proverAddr) revert PROVER_ADDR_MISMATCH(prover.addr, _proverAddr);
+        if (prover.validUntil < block.timestamp) revert PROVER_OUT_OF_DATE(prover.validUntil);
+        return prover;
     }
 
     function getSignedHash(
@@ -151,19 +167,5 @@ contract ProverRegistry is OwnableUpgradeable, IProverRegistry {
         if (block.number - blockNumber >= maxBlockNumberDiff)
             revert BLOCK_NUMBER_OUT_OF_DATE();
         if (blockhash(blockNumber) != blockHash) revert BLOCK_NUMBER_MISMATCH();
-    }
-
-    function _isProverValid(
-        uint256 _instanceID,
-        address _proverAddr
-    ) private view returns (bool, ProverInstance memory) {
-        ProverInstance memory prover;
-        if (_instanceID == 0) return (false, prover);
-        if (_proverAddr == address(0)) return (false, prover);
-        prover = attestedProvers[_instanceID];
-        return (
-            prover.addr == _proverAddr && prover.validUntil >= block.timestamp,
-            prover
-        );
     }
 }

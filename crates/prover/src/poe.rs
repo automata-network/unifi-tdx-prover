@@ -1,10 +1,11 @@
 use alloy_sol_types::SolValue;
+use base::{Keypair, SecretKey};
 use executor::BlockDataProvider;
 use raiko_lib::primitives::keccak::keccak;
-use reth_primitives::{Address, U256};
+use reth_primitives::{Address, Bytes, U256};
 use serde::{Deserialize, Serialize};
 
-use crate::{Keypair, Pob};
+use crate::Pob;
 
 alloy_sol_types::sol! {
     #[derive(Default, Debug, Deserialize, Serialize)]
@@ -21,12 +22,20 @@ alloy_sol_types::sol! {
         uint256 id;
         address new_instance;
         bytes signature;
+        uint256 teeType; // 1: IntelTDX
     }
 }
 
+fn _check() {
+    let _: base::ProverRegistryStub::Poe = unsafe { std::mem::transmute(Poe::default()) };
+    let _: base::ProverRegistryStub::SignedPoe =
+        unsafe { std::mem::transmute(SignedPoe::default()) };
+    ()
+}
+
 impl Poe {
-    pub fn signed_msg(&self, pob: &Pob, new_instance: Address) -> Vec<u8> {
-        (
+    pub fn signed_msg(&self, pob: &Pob, new_instance: Address) -> Bytes {
+        let mut vec = (
             "VERIFY_PROOF",
             pob.chain_id(),
             pob.data.l1_contract.unwrap_or_default(),
@@ -35,16 +44,19 @@ impl Poe {
             pob.data.prover,
             pob.data.parent_meta_hash,
         )
-            .abi_encode()
+            .abi_encode();
+        vec = (&vec[32..]).into();
+        vec.into()
     }
 
-    pub fn sign(self, pob: &Pob, id: U256, new_instance: Address, old_kp: &Keypair) -> SignedPoe {
-        let sig = old_kp.sign_digest_ecdsa(keccak(self.signed_msg(pob, new_instance)));
+    pub fn sign(self, pob: &Pob, id: U256, new_instance: Address, sk: &SecretKey, tee_type: U256) -> SignedPoe {
+        let sig = Keypair::sign_digest_ecdsa(sk, keccak(self.signed_msg(pob, new_instance)));
 
         SignedPoe {
             poe: self,
             id,
             new_instance,
+            teeType: tee_type,
             signature: sig.into(),
         }
     }

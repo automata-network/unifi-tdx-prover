@@ -32,3 +32,4 @@ contracts/docs/
 
 # Dotenv file
 contracts/.env
+/contracts/broadcast
