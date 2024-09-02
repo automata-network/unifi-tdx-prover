@@ -9,12 +9,19 @@ function deploy() {
     if [[ "$MAX_BLOCK_NUMBER_DIFF" == "" ]]; then
         MAX_BLOCK_NUMBER_DIFF=25
     fi 
+    if [[ ! -f "contracts/deployment/tee_deploy_$ENV.json" ]]; then
+        mkdir -p contracts/deployment
+        echo '{"remark": "Deployment"}' > contracts/deployment/tee_deploy_$ENV.json
+    fi
+
     CHAIN_ID=$CHAIN_ID \
     ATTEST_VALIDITY_SECONDS=$ATTEST_VALIDITY_SECONDS \
     MAX_BLOCK_NUMBER_DIFF=$MAX_BLOCK_NUMBER_DIFF \
     DEPLOY_KEY_SUFFIX=DEPLOY_KEY \
     ENV=$ENV \
     _script script/Deploy.s.sol --sig 'deployAll()'
+
+    cat contracts/deployment/tee_deploy_$ENV.json
 }
 
 "$@"
