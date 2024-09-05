@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
+use alloy_sol_types::SolValue;
 use raiko_lib::{
-    consts::VerifierType, input::GuestInput, primitives::mpt::MptNode,
+    consts::VerifierType, input::{BlockMetadata, GuestInput}, primitives::mpt::MptNode,
     protocol_instance::ProtocolInstance,
 };
 use reth_evm::execute::ProviderError;
@@ -41,7 +42,7 @@ pub struct PobData {
     pub graffiti: B256,
     pub l1_contract: Option<Address>,
     pub prover: Address, // input.taiko.prover_data.prover
-    pub parent_meta_hash: B256, // input.taiko.metadata.parentMetaHash
+    pub block_meta: BlockMetadata, // input.taiko.metadata
 }
 
 impl From<ProofInput> for Pob {
@@ -70,7 +71,7 @@ impl From<ProofInput> for Pob {
             l2_parent_header: value.parent_header,
             graffiti: value.taiko.prover_data.graffiti,
             prover: value.taiko.prover_data.prover,
-            parent_meta_hash: value.taiko.metadata.parentMetaHash,
+            block_meta: value.taiko.metadata,
         };
         Self {
             block: value.l2_block,
@@ -98,6 +99,10 @@ pub fn guest_input_to_proof_input(input: GuestInput) -> Result<ProofInput, Strin
     })
 }
 
+pub fn meta_hash(bm: &BlockMetadata) -> B256 {
+    keccak256(bm.abi_encode())
+}
+
 impl From<GuestInput> for Pob {
     fn from(value: GuestInput) -> Self {
         let mut block_hashes = BTreeMap::new();
@@ -121,7 +126,7 @@ impl From<GuestInput> for Pob {
             l2_parent_header: value.parent_header,
             l2_contract: value.chain_spec.l2_contract,
             graffiti: value.taiko.prover_data.graffiti,
-            parent_meta_hash: value.taiko.block_proposed.meta.parentMetaHash,
+            block_meta: value.taiko.block_proposed.meta,
             prover: value.taiko.prover_data.prover
         };
         Self {

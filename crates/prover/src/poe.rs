@@ -5,7 +5,7 @@ use raiko_lib::primitives::keccak::keccak;
 use reth_primitives::{Address, Bytes, U256};
 use serde::{Deserialize, Serialize};
 
-use crate::Pob;
+use crate::{meta_hash, Pob};
 
 alloy_sol_types::sol! {
     #[derive(Default, Debug, Deserialize, Serialize)]
@@ -42,14 +42,21 @@ impl Poe {
             self.clone(),
             new_instance,
             pob.data.prover,
-            pob.data.parent_meta_hash,
+            meta_hash(&pob.data.block_meta),
         )
             .abi_encode();
         vec = (&vec[32..]).into();
         vec.into()
     }
 
-    pub fn sign(self, pob: &Pob, id: U256, new_instance: Address, sk: &SecretKey, tee_type: U256) -> SignedPoe {
+    pub fn sign(
+        self,
+        pob: &Pob,
+        id: U256,
+        new_instance: Address,
+        sk: &SecretKey,
+        tee_type: U256,
+    ) -> SignedPoe {
         let sig = Keypair::sign_digest_ecdsa(sk, keccak(self.signed_msg(pob, new_instance)));
 
         SignedPoe {

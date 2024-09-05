@@ -7,7 +7,7 @@ use alloy::{
 use awc::Client;
 use base::ProverRegistryStub::{Context, Proof};
 use clap::Parser;
-use prover::{Pob, ProofRequest, ProofResponse, SignedPoe};
+use prover::{meta_hash, Pob, ProofRequest, ProofResponse, SignedPoe};
 use serde::Deserialize;
 
 #[derive(Parser, Deserialize, Debug)]
@@ -90,7 +90,7 @@ async fn main() -> std::io::Result<()> {
 
     let ctx = Context {
         prover: input.input.taiko.prover_data.prover,
-        metaHash: input.input.taiko.metadata.parentMetaHash,
+        metaHash: meta_hash(&input.input.taiko.metadata),
         ..Default::default()
     };
 
