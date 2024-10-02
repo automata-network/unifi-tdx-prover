@@ -1,7 +1,7 @@
 use std::{path::PathBuf, time::Duration};
 
 use alloy::{
-    primitives::{keccak256, Address},
+    primitives::Address,
     sol_types::SolType,
 };
 use awc::Client;
@@ -59,11 +59,19 @@ async fn main() -> std::io::Result<()> {
         let data = std::fs::read(&app.config).unwrap();
         app.merge(serde_json::from_slice(&data).unwrap());
     }
+    let eth = base::Eth::dial(&app.l1_endpoint, Some(&app.private_key)).unwrap();
+
+    let registry = base::ProverRegistry::new(eth, app.prover_registry);
 
     let client = Client::default();
     let mut input: ProofRequest =
         serde_json::from_slice(&std::fs::read(&app.input).unwrap()).unwrap();
     input.input.chain_spec.l1_contract = Some(app.prover_registry);
+
+    let contract_chain_id = registry.chain_id().await.unwrap();
+    if contract_chain_id != input.input.chain_spec.chain_id {
+        panic!("chain id mismatch, contract:{}, local:{}", contract_chain_id, input.input.chain_spec.chain_id);
+    }
 
     let pob: Pob = input.input.clone().into();
 
@@ -84,17 +92,15 @@ async fn main() -> std::io::Result<()> {
 
     let poe = SignedPoe::abi_decode(&response.data, true).unwrap();
 
-    let eth = base::Eth::dial(&app.l1_endpoint, Some(&app.private_key)).unwrap();
-
-    let registry = base::ProverRegistry::new(eth, app.prover_registry);
-
     let ctx = Context {
         prover: input.input.taiko.prover_data.prover,
         metaHash: meta_hash(&input.input.taiko.metadata),
         ..Default::default()
     };
 
-    let hash = registry
+
+
+    let contract_signed_msg = registry
         .get_poe_hash(
             unsafe { std::mem::transmute_copy(&poe.poe) },
             ctx.metaHash,
@@ -104,7 +110,11 @@ async fn main() -> std::io::Result<()> {
         .await
         .unwrap();
 
-    assert_eq!(hash, keccak256(poe.poe.signed_msg(&pob, poe.new_instance)));
+    assert_eq!(
+        contract_signed_msg,
+        poe.poe.signed_msg(&pob, poe.new_instance),
+        "signed msg mismatch with contract side"
+    );
 
     // let addr = registry
     //     .recover_old_instance(ctx.clone(), unsafe { std::mem::transmute_copy(&poe) })

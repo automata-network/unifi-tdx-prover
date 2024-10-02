@@ -22,6 +22,7 @@ Cargo.lock
 # Compiler files
 contracts/cache/
 contracts/out/
+contracts/deployment
 
 # Ignores development broadcast logs
 contracts/broadcast/*/31337/

@@ -2,8 +2,11 @@ use std::collections::BTreeMap;
 
 use alloy_sol_types::SolValue;
 use raiko_lib::{
-    consts::VerifierType, input::{BlockMetadata, GuestInput}, primitives::mpt::MptNode,
-    protocol_instance::ProtocolInstance,
+    input::{
+        ontake::{BaseFeeConfig, BlockMetadataV2},
+        BlockMetadata, BlockProposedFork, GuestInput,
+    },
+    primitives::mpt::MptNode,
 };
 use reth_evm::execute::ProviderError;
 use reth_evm_ethereum::taiko::TaikoData;
@@ -13,13 +16,13 @@ use serde::{Deserialize, Serialize};
 use crate::{ProofInput, ProofTaikoInput};
 use executor::BlockDataProvider;
 
-#[derive(Default, Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Pob {
     pub block: Block,
     pub data: PobData,
 }
 
-#[derive(Default, Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct PobData {
     pub chain_id: u64,
     // state_root before the first block of the Pob
@@ -41,8 +44,9 @@ pub struct PobData {
     // required by proof
     pub graffiti: B256,
     pub l1_contract: Option<Address>,
-    pub prover: Address, // input.taiko.prover_data.prover
-    pub block_meta: BlockMetadata, // input.taiko.metadata
+    pub prover: Address,               // input.taiko.prover_data.prover
+    pub block_meta: BlockMetaDataFork, // input.taiko.metadata
+    pub base_fee_config: BaseFeeConfig,
 }
 
 impl From<ProofInput> for Pob {
@@ -71,6 +75,7 @@ impl From<ProofInput> for Pob {
             l2_parent_header: value.parent_header,
             graffiti: value.taiko.prover_data.graffiti,
             prover: value.taiko.prover_data.prover,
+            base_fee_config: get_base_fee_config(&value.taiko.metadata),
             block_meta: value.taiko.metadata,
         };
         Self {
@@ -80,9 +85,14 @@ impl From<ProofInput> for Pob {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum BlockMetaDataFork {
+    None,
+    Hekla(BlockMetadata),
+    Ontake(BlockMetadataV2),
+}
+
 pub fn guest_input_to_proof_input(input: GuestInput) -> Result<ProofInput, String> {
-    let pi = ProtocolInstance::new(&input, &input.block.header, VerifierType::SGX)
-        .map_err(|err| err.to_string())?;
     Ok(ProofInput {
         l2_block: input.block,
         parent_header: input.parent_header,
@@ -93,14 +103,39 @@ pub fn guest_input_to_proof_input(input: GuestInput) -> Result<ProofInput, Strin
         ancestor_headers: input.ancestor_headers,
         taiko: ProofTaikoInput {
             l1_header: input.taiko.l1_header,
-            metadata: pi.block_metadata,
+            metadata: select_block_meta(&input.taiko.block_proposed),
             prover_data: input.taiko.prover_data,
         },
     })
 }
 
-pub fn meta_hash(bm: &BlockMetadata) -> B256 {
-    keccak256(bm.abi_encode())
+pub fn select_block_meta(block: &BlockProposedFork) -> BlockMetaDataFork {
+    match block {
+        BlockProposedFork::Nothing => BlockMetaDataFork::None,
+        BlockProposedFork::Hekla(b) => BlockMetaDataFork::Hekla(b.meta.clone()),
+        BlockProposedFork::Ontake(b) => BlockMetaDataFork::Ontake(b.meta.clone()),
+    }
+}
+
+pub fn get_base_fee_config(meta: &BlockMetaDataFork) -> BaseFeeConfig {
+    match meta {
+        BlockMetaDataFork::Ontake(b) => BaseFeeConfig {
+            adjustmentQuotient: b.baseFeeConfig.adjustmentQuotient,
+            sharingPctg: b.baseFeeConfig.sharingPctg,
+            gasIssuancePerSecond: b.baseFeeConfig.gasIssuancePerSecond,
+            minGasExcess: b.baseFeeConfig.minGasExcess,
+            maxGasIssuancePerBlock: b.baseFeeConfig.maxGasIssuancePerBlock,
+        },
+        _ => BaseFeeConfig::default(),
+    }
+}
+
+pub fn meta_hash(bm: &BlockMetaDataFork) -> B256 {
+    match bm {
+        BlockMetaDataFork::None => keccak256(vec![]).into(),
+        BlockMetaDataFork::Hekla(ref meta) => keccak256(meta.abi_encode()).into(),
+        BlockMetaDataFork::Ontake(ref meta) => keccak256(meta.abi_encode()).into(),
+    }
 }
 
 impl From<GuestInput> for Pob {
@@ -126,8 +161,11 @@ impl From<GuestInput> for Pob {
             l2_parent_header: value.parent_header,
             l2_contract: value.chain_spec.l2_contract,
             graffiti: value.taiko.prover_data.graffiti,
-            block_meta: value.taiko.block_proposed.meta,
-            prover: value.taiko.prover_data.prover
+            block_meta: select_block_meta(&value.taiko.block_proposed),
+            prover: value.taiko.prover_data.prover,
+            base_fee_config: unsafe {
+                std::mem::transmute(value.taiko.block_proposed.base_fee_config())
+            },
         };
         Self {
             block: value.block,
@@ -144,6 +182,7 @@ impl BlockDataProvider for Pob {
             l2_contract: self.data.l2_contract.unwrap_or_default(),
             l1_header: self.data.l1_header.clone(),
             parent_header: self.data.l2_parent_header.clone(),
+            base_fee_config: unsafe { std::mem::transmute(self.data.base_fee_config.clone()) },
         }
     }
 

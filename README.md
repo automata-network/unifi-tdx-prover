@@ -55,8 +55,8 @@ Compile Command: `cargo build --release --bin proof-submitter`.
 The tool for convert the `GuestInput` to `ProofRequest`.
 Usage: 
 ```
-$ cargo build --bin guest-input-to-proof-request testdata/guest-input-ethereum-20335518.json # generate the proof requrest
-$ ls -l testdata/proof-request-ethereum-20335518.json
+$ cargo build --bin guest-input-to-proof-request testdata/guest-input-taiko-mainnet-328835.json # generate the proof requrest
+$ ls -l testdata/proof-request-taiko-mainnet-328835.json
 ```
 
 ## Prover API:
@@ -79,7 +79,7 @@ $ ls -l testdata/proof-request-ethereum-20335518.json
 
 4. Deploy contracts
 ```
-$ ATTESTATION=0x0000000000000000000000000000000000000000 ENV=localhost CHAIN_ID=1 VERSION=1 ./scripts/deploy_verifier.sh deploy
+$ ATTESTATION=0x0000000000000000000000000000000000000000 ENV=localhost CHAIN_ID=167000 VERSION=1 ./scripts/deploy_verifier.sh deploy
 $ # ATTESTATION=0x0000000000000000000000000000000000000000: enable the mock mode on ProverRegistry.
 $ # CHAIN_ID=1: the target chain id that the prover want to prove
 ...
@@ -114,7 +114,7 @@ $ cargo run --release --bin multi-prover -- -c config/localhost_mock.json
 ### Test with Proof
 
 ```
-$ cargo run --release --bin proof-submitter -- -c config/localhost_mock.json testdata/proof-request-ethereum-20335518.json
+$ cargo run --release --bin proof-submitter -- -c config/localhost_mock.json testdata/proof-request-taiko-mainnet-328835.json
 [2024-09-02T09:03:35.124Z INFO  base::prover_registry] [verify_proofs] waiting receipt for: 0x0173cf82bef0aed0c6881440849e2274e74e8abecd9b6a8dc0a589bd82ea675d
 [2024-09-02T09:03:35.125Z INFO  base::prover_registry] receipt: TransactionReceipt { inner: Eip1559(ReceiptWithBloom { receipt: Receipt { status: Eip658(true), cumulative_gas_used: 50207, logs: [Log { inner: Log { address: 0x2a51d7d9b1704c77a84b2a67e40e3a9d09da148b, data: LogData { topics: [0x2a1b8dadb1ac8d3250e6b9bbcf7716c47998387be4ef1c1d4a42c965123e2eec], data: 0x0000000000000000000000000000000000000000000000000000000000000001 } }, block_hash: Some(0xa4935c55cc493b3bcbba46f2caca2c7a13ab2163da1405e02726592274b21852), block_number: Some(3200772), block_timestamp: Some(1725267829), transaction_hash: Some(0x0173cf82bef0aed0c6881440849e2274e74e8abecd9b6a8dc0a589bd82ea675d), transaction_index: Some(0), log_index: Some(0), removed: false }] }, logs_bloom: 0x00000000000000000400000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000400000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 }), transaction_hash: 0x0173cf82bef0aed0c6881440849e2274e74e8abecd9b6a8dc0a589bd82ea675d, transaction_index: Some(0), block_hash: Some(0xa4935c55cc493b3bcbba46f2caca2c7a13ab2163da1405e02726592274b21852), block_number: Some(3200772), gas_used: 50207, effective_gas_price: 2000358, blob_gas_used: None, blob_gas_price: Some(1), from: 0x3d39c0f2469466ddf6aecf8b47c2edbdfaf9791a, to: Some(0x2a51d7d9b1704c77a84b2a67e40e3a9d09da148b), contract_address: None, state_root: Some(0x0000000000000000000000000000000000000000000000000000000000000000), authorization_list: None }
 ```

@@ -2,7 +2,7 @@ use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 pub use raiko_lib::input::GuestInput;
 use raiko_lib::{
     consts::ChainSpec,
-    input::{BlockMetadata, TaikoProverData},
+    input::TaikoProverData,
     primitives::mpt::{MptNode, StorageEntry},
 };
 use reth_primitives::{
@@ -11,7 +11,7 @@ use reth_primitives::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::guest_input_to_proof_input;
+use crate::{guest_input_to_proof_input, BlockMetaDataFork};
 
 #[rpc(server, client, namespace = "prover")]
 pub trait ProverV1Api {
@@ -41,7 +41,7 @@ pub struct ProofTaikoInput {
     // Synced L1 header
     pub l1_header: Header,
     // TaikoL1 L2 Block metadata
-    pub metadata: BlockMetadata,
+    pub metadata: BlockMetaDataFork,
     // Taiko prover data
     pub prover_data: TaikoProverData,
 }
@@ -66,7 +66,6 @@ pub struct ProofResponse {
 
 #[cfg(test)]
 mod test {
-    
 
     #[test]
     pub fn test_run() {}

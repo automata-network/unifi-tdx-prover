@@ -1,4 +1,7 @@
-use std::time::{Duration, SystemTime};
+use std::{
+    path::PathBuf,
+    time::{Duration, SystemTime},
+};
 
 use actix_web::{
     post,
@@ -6,7 +9,7 @@ use actix_web::{
     web::{Data, Json, JsonConfig},
     App, HttpResponse, HttpServer, Responder,
 };
-use alloy::primitives::Address;
+use alloy::primitives::{Address, U256};
 use base::{Eth, Keypair, ProverRegistry};
 use clap::Parser;
 use prover::{guest_input_to_proof_input, ProofRequest, Prover};
@@ -82,8 +85,6 @@ async fn main() -> std::io::Result<()> {
     }
 
     let kp = Keypair::new();
-    let client = base::Eth::dial(&mp.l1_endpoint, Some(&mp.private_key)).unwrap();
-    let registry = ProverRegistry::new(client.clone(), mp.prover_registry);
 
     #[cfg(feature = "tdx")]
     let quote_builder =
@@ -93,7 +94,31 @@ async fn main() -> std::io::Result<()> {
 
     let tee_type = quote_builder.tee_type();
 
-    let _attestation_loop_handle = spawn(attestation_loop(quote_builder, client, kp.clone(), registry));
+    if false {
+        let prover = Prover::new(kp.clone(), tee_type);
+        kp.rotate().commit(U256::from_limbs_slice(&[1]));
+        let data = std::fs::read(
+            PathBuf::new()
+                .join("testdata")
+                .join("proof-request-taiko-mainnet-328837.json"),
+        )
+        .unwrap();
+        let data = serde_json::from_slice(&data).unwrap();
+        let data = prover.gen_proof(data).await.unwrap();
+        dbg!(data);
+
+        return Ok(());
+    }
+
+    let client = base::Eth::dial(&mp.l1_endpoint, Some(&mp.private_key)).unwrap();
+    let registry = ProverRegistry::new(client.clone(), mp.prover_registry);
+
+    let _attestation_loop_handle = spawn(attestation_loop(
+        quote_builder,
+        client,
+        kp.clone(),
+        registry,
+    ));
 
     HttpServer::new(move || {
         let prover = Prover::new(kp.clone(), tee_type);
@@ -109,7 +134,12 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-async fn attestation_loop<B: ReportBuilder>(quote_builder: B, client: Eth, kp: Keypair, registry: ProverRegistry) {
+async fn attestation_loop<B: ReportBuilder>(
+    quote_builder: B,
+    client: Eth,
+    kp: Keypair,
+    registry: ProverRegistry,
+) {
     let err_retry = Duration::from_secs(5);
     loop {
         let new_key = kp.rotate();

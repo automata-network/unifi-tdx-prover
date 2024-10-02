@@ -113,12 +113,12 @@ contract ProverRegistry is OwnableUpgradeable, IProverRegistry {
         bytes memory _signature
     ) public view returns (address) {
         return ECDSA.recover(
-            getSignedHash(
+            keccak256(getSignedMsg(
                 _poe,
                 _newInstance,
                 _prover,
                 _metaHash
-            ),
+            )),
             _signature
         );
     }
@@ -136,24 +136,21 @@ contract ProverRegistry is OwnableUpgradeable, IProverRegistry {
         return prover;
     }
 
-    function getSignedHash(
+    function getSignedMsg(
         Poe memory _poe,
         address _newInstance,
         address _prover,
         bytes32 _metaHash
-    ) public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    "VERIFY_PROOF",
-                    chainID,
-                    address(this),
-                    _poe,
-                    _newInstance,
-                    _prover,
-                    _metaHash
-                )
-            );
+    ) public view returns (bytes memory) {
+        return abi.encode(
+            "VERIFY_PROOF",
+            chainID,
+            address(this),
+            _poe,
+            _newInstance,
+            _prover,
+            _metaHash
+        );
     }
 
     // Due to the inherent unpredictability of blockHash, it mitigates the risk of mass-generation 
