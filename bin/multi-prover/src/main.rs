@@ -103,7 +103,7 @@ async fn main() -> std::io::Result<()> {
 
     #[cfg(feature = "tdx")]
     let quote_builder =
-        tee::TdxQuoteBuilder::new(std::path::PathBuf::new().join(".").join("attest"));
+        tee::TdxQuoteLocalAgentBuilder::new();
     #[cfg(not(feature = "tdx"))]
     let quote_builder = tee::MockBuilder::new();
 

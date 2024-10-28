@@ -1,6 +1,7 @@
 use alloy::primitives::{keccak256, Address, Bytes, B256, U256};
 
-use base::{Eth, EthError, Keypair, RegisterCall, ReportData};
+use async_trait::async_trait;
+use base::{Eth, Keypair, RegisterCall, ReportData};
 
 #[derive(Clone, Debug)]
 pub struct AttestationReport {
@@ -12,17 +13,21 @@ pub struct AttestationReport {
     pub tee_type: U256,
 }
 
+#[async_trait(?Send)]
 pub trait ReportBuilder {
-    fn generate_quote(&self, rp: ReportData) -> Bytes;
+    async fn generate_quote(&self, rp: ReportData) -> Result<Bytes, String>;
     fn tee_type(&self) -> U256;
 }
 
 impl AttestationReport {
-    pub async fn build<B>(builder: &B, eth: &Eth, sk: &Keypair) -> Result<Self, EthError>
+    pub async fn build<B>(builder: &B, eth: &Eth, sk: &Keypair) -> Result<Self, String>
     where
         B: ReportBuilder,
     {
-        let (number, hash) = eth.select_reference_block().await?;
+        let (number, hash) = eth
+            .select_reference_block()
+            .await
+            .map_err(|err| format!("{:?}", err))?;
 
         let vars = std::env::args().collect::<Vec<String>>();
         let bin_data = std::fs::read(&vars[0]).unwrap();
@@ -37,7 +42,7 @@ impl AttestationReport {
         };
 
         let call: RegisterCall = report.clone().into();
-        report.report = builder.generate_quote(call._data);
+        report.report = builder.generate_quote(call._data).await?;
 
         Ok(report)
     }
@@ -53,6 +58,7 @@ impl From<AttestationReport> for RegisterCall {
                 referenceBlockHash: value.reference_block_hash,
                 referenceBlockNumber: value.reference_block_number,
                 binHash: value.bin_hash,
+                ext: Bytes::new(),
             },
         }
     }

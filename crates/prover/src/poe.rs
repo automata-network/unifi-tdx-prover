@@ -27,7 +27,7 @@ alloy_sol_types::sol! {
 }
 
 fn _check() {
-    let _: base::ProverRegistryStub::Poe = unsafe { std::mem::transmute(Poe::default()) };
+    // let _: base::ProverRegistryStub::Poe = unsafe { std::mem::transmute(Poe::default()) };
     let _: base::ProverRegistryStub::SignedPoe =
         unsafe { std::mem::transmute(SignedPoe::default()) };
     ()

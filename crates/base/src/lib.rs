@@ -8,3 +8,6 @@ pub use prover_registry::*;
 
 mod keypair;
 pub use keypair::*;
+
+mod base64;
+pub use base64::*;

@@ -1,4 +1,5 @@
 use alloy::primitives::{Bytes, U256};
+use async_trait::async_trait;
 use base::ReportData;
 use rand::RngCore;
 
@@ -16,11 +17,12 @@ impl MockBuilder {
     }
 }
 
+#[async_trait(?Send)]
 impl ReportBuilder for MockBuilder {
-    fn generate_quote(&self, _: ReportData) -> Bytes {
+    async fn generate_quote(&self, _: ReportData) -> Result<Bytes, String> {
         let mut report = [0_u8; 1024];
         rand::thread_rng().fill_bytes(&mut report);
-        report.into()
+        Ok(report.into())
     }
 
     fn tee_type(&self) -> U256 {
