@@ -11,11 +11,12 @@ pub struct AttestationReport {
     pub reference_block_number: U256,
     pub bin_hash: B256,
     pub tee_type: U256,
+    pub ext: Bytes,
 }
 
 #[async_trait(?Send)]
 pub trait ReportBuilder {
-    async fn generate_quote(&self, rp: ReportData) -> Result<Bytes, String>;
+    async fn generate_quote(&self, rp: ReportData) -> Result<(Bytes, Bytes), String>;
     fn tee_type(&self) -> U256;
 }
 
@@ -34,15 +35,17 @@ impl AttestationReport {
 
         let mut report = Self {
             address: sk.address(),
-            report: Bytes::new(),
             reference_block_hash: hash,
             reference_block_number: number,
             tee_type: builder.tee_type(),
             bin_hash: keccak256(&bin_data),
+
+            report: Bytes::new(),
+            ext: Bytes::new(),
         };
 
         let call: RegisterCall = report.clone().into();
-        report.report = builder.generate_quote(call._data).await?;
+        (report.report, report.ext) = builder.generate_quote(call._data).await?;
 
         Ok(report)
     }
@@ -58,7 +61,7 @@ impl From<AttestationReport> for RegisterCall {
                 referenceBlockHash: value.reference_block_hash,
                 referenceBlockNumber: value.reference_block_number,
                 binHash: value.bin_hash,
-                ext: Bytes::new(),
+                ext: value.ext,
             },
         }
     }

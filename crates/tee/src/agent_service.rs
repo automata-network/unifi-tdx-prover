@@ -78,6 +78,16 @@ pub struct AgentServiceResponse {
     pub nonce: Option<Base64Bytes>,
 }
 
+alloy::sol! {
+    #[derive(Debug, Default)]
+
+    struct ExtTpmInfo {
+        bytes32 pcr10;
+        bytes quote;
+        bytes signature;
+        bytes akDer;
+    }}
+
 #[cfg(test)]
 mod test {
     use super::AgentServiceResponse;
