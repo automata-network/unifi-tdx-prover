@@ -10,7 +10,7 @@ pub struct MockBuilder {
 
 impl MockBuilder {
     pub fn new() -> Self {
-        Self { ty: U256::default() }
+        Self { ty: U256::from(201) }
     }
 }
 

@@ -1,5 +1,5 @@
 use std::{collections::BTreeMap, sync::Arc};
-
+use raiko_lib::builder::UNIFI_TESTNET;
 use reth_chainspec::{ChainSpec, ChainSpecBuilder, HOLESKY, MAINNET, TAIKO_A7, TAIKO_DEV, TAIKO_MAINNET};
 
 lazy_static::lazy_static! {
@@ -19,6 +19,7 @@ fn available_chain_list() -> Vec<Arc<ChainSpec>> {
         TAIKO_A7.clone(),
         TAIKO_DEV.clone(),
         TAIKO_MAINNET.clone(),
+        UNIFI_TESTNET.clone(),
     ]
 }
 

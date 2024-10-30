@@ -20,6 +20,7 @@ jsonrpsee-types = "0.23"
 jsonrpsee-http-client = "0.23"
 
 # revm = { version = "12.1.0", default-features = false, features = ["std", "c-kzg", "secp256k1", "blst","serde"] }
+raiko-core = { git = "https://github.com/PufferFinance/raiko", branch = "unifi" }
 raiko-lib = { git = "https://github.com/PufferFinance/raiko", branch = "unifi", features = ["std"] }
 
 # reth
@@ -179,6 +180,5 @@ revm-precompile = { git = "https://github.com/taikoxyz/revm.git", branch = "v36-
 secp256k1 = { git = "https://github.com/CeciliaZ030/rust-secp256k1", branch = "sp1-patch" }
 blst = { git = "https://github.com/CeciliaZ030/blst.git", branch = "v0.3.12-serialize" }
 alloy-serde = { git = "https://github.com/CeciliaZ030/alloy.git", branch = "v0.1.4-fix"}
-
 #[patch.'https://github.com/taikoxyz/raiko']
 #raiko-lib = { path = "../raiko/lib" }

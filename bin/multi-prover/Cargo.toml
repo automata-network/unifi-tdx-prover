@@ -8,6 +8,7 @@ default = []
 tdx = []
 
 [dependencies]
+raiko-core.workspace = true
 prover.workspace = true
 executor.workspace = true
 env_logger.workspace = true
