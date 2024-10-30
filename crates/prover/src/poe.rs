@@ -58,7 +58,10 @@ impl Poe {
         sk: &SecretKey,
         tee_type: U256,
     ) -> SignedPoe {
-        let sig = Keypair::sign_digest_ecdsa(sk, keccak(self.signed_msg(pob, prover_registry, new_instance)));
+        let sig = Keypair::sign_digest_ecdsa(
+            sk,
+            keccak(self.signed_msg(pob, prover_registry, new_instance)),
+        );
 
         SignedPoe {
             poe: self,

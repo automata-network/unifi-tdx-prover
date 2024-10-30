@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use alloy_primitives::Address;
 use alloy_sol_types::SolValue;
 use base::{stack_error, Keypair};
@@ -8,23 +7,12 @@ use jsonrpsee::{
     types::ErrorObject,
 };
 use raiko_core::{
-    interfaces::{
-        ProofRequest as RpcProofRequest,
-    },
-    provider::{
-        rpc::{
-            RpcBlockDataProvider,
-        }
-    },
-    Raiko,
+    interfaces::ProofRequest as RpcProofRequest, provider::rpc::RpcBlockDataProvider, Raiko,
 };
-use raiko_lib::{
-    consts::{
-        SupportedChainSpecs
-    }
-};
+use raiko_lib::consts::SupportedChainSpecs;
 use raiko_lib::input::GuestInput;
 use reth_primitives::U256;
+use std::sync::Arc;
 
 use crate::{Pob, Poe, ProofInput, ProofRequest, ProofResponse, ProverV1ApiServer, SignedPoe};
 
@@ -43,7 +31,12 @@ stack_error! {
     }
 }
 
-pub fn prove(input: ProofInput, prover_registry: Address, kp: &Keypair, tee_type: U256) -> Result<SignedPoe, ProveError> {
+pub fn prove(
+    input: ProofInput,
+    prover_registry: Address,
+    kp: &Keypair,
+    tee_type: U256,
+) -> Result<SignedPoe, ProveError> {
     let pob: Arc<Pob> = Arc::new(input.into());
     let new_block = BlockExecutor::new(pob.clone()).execute()?;
     let poe = Poe {
@@ -68,21 +61,22 @@ pub struct Prover {
 
 impl Prover {
     pub fn new(kp: Keypair, prover_registry: Address, tee_type: U256) -> Self {
-        Self { kp, prover_registry, tee_type }
+        Self {
+            kp,
+            prover_registry,
+            tee_type,
+        }
     }
 
     pub async fn get_proof(&self, req: RpcProofRequest) -> GuestInput {
-        let l1_network = "holesky".to_owned();
-        let network = "unifi_testnet".to_owned();
         let path = "./chain_spec_list.json".parse().unwrap();
         let chain_specs = SupportedChainSpecs::merge_from_file(path).unwrap();
 
-        let taiko_chain_spec = chain_specs.get_chain_spec(&network).unwrap();
-        let l1_chain_spec = chain_specs.get_chain_spec(&l1_network).unwrap();
+        let taiko_chain_spec = chain_specs.get_chain_spec(&req.network).unwrap();
+        let l1_chain_spec = chain_specs.get_chain_spec(&req.l1_network).unwrap();
 
-        let provider =
-            RpcBlockDataProvider::new(&taiko_chain_spec.rpc, req.block_number - 1)
-                .expect("Could not create RpcBlockDataProvider");
+        let provider = RpcBlockDataProvider::new(&taiko_chain_spec.rpc, req.block_number - 1)
+            .expect("Could not create RpcBlockDataProvider");
 
         let raiko = Raiko::new(l1_chain_spec, taiko_chain_spec, req.clone());
 

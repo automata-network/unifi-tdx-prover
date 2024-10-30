@@ -14,13 +14,9 @@ use base::{Eth, Keypair, ProverRegistry};
 use clap::Parser;
 use prover::{guest_input_to_proof_input, ProofRequest, Prover};
 use prover::{GuestInput, ProverV1ApiServer};
+use raiko_core::interfaces::ProofRequest as RpcProofRequest;
 use serde::Deserialize;
 use tee::{AttestationReport, ReportBuilder};
-use raiko_core::{
-    interfaces::{
-        ProofRequest as RpcProofRequest,
-    }
-};
 
 #[post("/debug/gen_proof_by_guest_input")]
 async fn gen_proof_by_guest_input(prover: Data<Prover>, req: Json<GuestInput>) -> impl Responder {
@@ -48,7 +44,6 @@ async fn get_proof(prover: Data<Prover>, req: Json<RpcProofRequest>) -> impl Res
     let proof_request = ProofRequest {
         input: guest_input_to_proof_input(guest_input).unwrap(),
     };
-
 
     match prover.prove(proof_request) {
         Ok(n) => HttpResponse::Ok().json(n),

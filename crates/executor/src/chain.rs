@@ -1,6 +1,8 @@
-use std::{collections::BTreeMap, sync::Arc};
 use raiko_lib::builder::UNIFI_TESTNET;
-use reth_chainspec::{ChainSpec, ChainSpecBuilder, HOLESKY, MAINNET, TAIKO_A7, TAIKO_DEV, TAIKO_MAINNET};
+use reth_chainspec::{
+    ChainSpec, ChainSpecBuilder, HOLESKY, MAINNET, TAIKO_A7, TAIKO_DEV, TAIKO_MAINNET,
+};
+use std::{collections::BTreeMap, sync::Arc};
 
 lazy_static::lazy_static! {
     pub static ref CHAIN_LIST: BTreeMap<u64, Arc<ChainSpec>> = chain_map(available_chain_list());
