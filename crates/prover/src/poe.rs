@@ -2,7 +2,7 @@ use alloy_sol_types::SolValue;
 use base::{Keypair, SecretKey};
 use executor::BlockDataProvider;
 use raiko_lib::primitives::keccak::keccak;
-use reth_primitives::{hex, Address, Bytes, U256};
+use reth_primitives::{Address, Bytes, U256};
 use serde::{Deserialize, Serialize};
 
 use crate::{meta_hash, Pob};
