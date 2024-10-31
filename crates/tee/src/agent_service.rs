@@ -63,6 +63,7 @@ pub struct TpmContents {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Pcrs {
+    pub hash: u16,
     pub pcrs: BTreeMap<U64, Base64Bytes>,
 }
 

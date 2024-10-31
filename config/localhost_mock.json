@@ -1,7 +1,7 @@
 {
-    "private_key": "c5114526e042343c6d1899cad05e1c00ba588314de9b96929914ee0df18d46b2",
-    "l1_endpoint": "http://localhost:32002",
-    "prover_registry": "0x4004e893e863eca264ffa895566f0587b5f53b80",
+    "private_key": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+    "l1_endpoint": "http://localhost:8545",
+    "prover_registry": "0xE401FBb0d6828e9f25481efDc9dd18Da9E500983",
     "prover_url": "http://127.0.0.1:20300",
     "listen": "127.0.0.1:20300"
 }

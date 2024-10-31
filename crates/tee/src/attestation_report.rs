@@ -16,7 +16,8 @@ pub struct AttestationReport {
 
 #[async_trait(?Send)]
 pub trait ReportBuilder {
-    async fn generate_quote(&self, rp: ReportData) -> Result<(Bytes, Bytes), String>;
+    async fn generate_ext(&self) -> Result<Bytes, String>;
+    async fn generate_quote(&self, rp: ReportData) -> Result<Bytes, String>;
     fn tee_type(&self) -> U256;
 }
 
@@ -32,6 +33,7 @@ impl AttestationReport {
 
         let vars = std::env::args().collect::<Vec<String>>();
         let bin_data = std::fs::read(&vars[0]).unwrap();
+        let ext = builder.generate_ext().await?;
 
         let mut report = Self {
             address: sk.address(),
@@ -39,13 +41,13 @@ impl AttestationReport {
             reference_block_number: number,
             tee_type: builder.tee_type(),
             bin_hash: keccak256(&bin_data),
+            ext,
 
             report: Bytes::new(),
-            ext: Bytes::new(),
         };
 
         let call: RegisterCall = report.clone().into();
-        (report.report, report.ext) = builder.generate_quote(call._data).await?;
+        report.report = builder.generate_quote(call._data).await?;
 
         Ok(report)
     }

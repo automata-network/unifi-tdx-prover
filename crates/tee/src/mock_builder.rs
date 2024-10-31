@@ -19,10 +19,14 @@ impl MockBuilder {
 
 #[async_trait(?Send)]
 impl ReportBuilder for MockBuilder {
-    async fn generate_quote(&self, _: ReportData) -> Result<(Bytes, Bytes), String> {
+    async fn generate_ext(&self) -> Result<Bytes, String> {
+        Ok(Bytes::new())
+    }
+
+    async fn generate_quote(&self, _: ReportData) -> Result<Bytes, String> {
         let mut report = [0_u8; 1024];
         rand::thread_rng().fill_bytes(&mut report);
-        Ok((report.into(), Bytes::new()))
+        Ok(report.into())
     }
 
     fn tee_type(&self) -> U256 {
