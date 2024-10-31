@@ -34,3 +34,8 @@ contracts/docs/
 # Dotenv file
 contracts/.env
 /contracts/broadcast
+
+# JetBrains
+.idea
+
+.DS_Store

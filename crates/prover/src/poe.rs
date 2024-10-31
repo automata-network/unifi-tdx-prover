@@ -34,11 +34,11 @@ fn _check() {
 }
 
 impl Poe {
-    pub fn signed_msg(&self, pob: &Pob, new_instance: Address) -> Bytes {
+    pub fn signed_msg(&self, pob: &Pob, prover_registry: Address, new_instance: Address) -> Bytes {
         let mut vec = (
             "VERIFY_PROOF",
             pob.chain_id(),
-            pob.data.l1_contract.unwrap_or_default(),
+            prover_registry,
             self.clone(),
             new_instance,
             pob.data.prover,
@@ -53,11 +53,15 @@ impl Poe {
         self,
         pob: &Pob,
         id: U256,
+        prover_registry: Address,
         new_instance: Address,
         sk: &SecretKey,
         tee_type: U256,
     ) -> SignedPoe {
-        let sig = Keypair::sign_digest_ecdsa(sk, keccak(self.signed_msg(pob, new_instance)));
+        let sig = Keypair::sign_digest_ecdsa(
+            sk,
+            keccak(self.signed_msg(pob, prover_registry, new_instance)),
+        );
 
         SignedPoe {
             poe: self,

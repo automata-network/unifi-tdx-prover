@@ -14,6 +14,7 @@ use base::{Eth, Keypair, ProverRegistry};
 use clap::Parser;
 use prover::{guest_input_to_proof_input, ProofRequest, Prover};
 use prover::{GuestInput, ProverV1ApiServer};
+use raiko_core::interfaces::ProofRequest as RpcProofRequest;
 use serde::Deserialize;
 use tee::{AttestationReport, ReportBuilder};
 
@@ -31,6 +32,20 @@ async fn gen_proof_by_guest_input(prover: Data<Prover>, req: Json<GuestInput>) -
 #[post("/v1/gen_proof")]
 async fn gen_proof(prover: Data<Prover>, req: Json<ProofRequest>) -> impl Responder {
     match prover.gen_proof(req.0).await {
+        Ok(n) => HttpResponse::Ok().json(n),
+        Err(err) => HttpResponse::BadRequest().json(err),
+    }
+}
+
+#[post("/v1/get_proof")]
+async fn get_proof(prover: Data<Prover>, req: Json<RpcProofRequest>) -> impl Responder {
+    let guest_input = prover.get_proof(req.0).await;
+
+    let proof_request = ProofRequest {
+        input: guest_input_to_proof_input(guest_input).unwrap(),
+    };
+
+    match prover.prove(proof_request) {
         Ok(n) => HttpResponse::Ok().json(n),
         Err(err) => HttpResponse::BadRequest().json(err),
     }
@@ -93,9 +108,8 @@ async fn main() -> std::io::Result<()> {
     let quote_builder = tee::MockBuilder::new();
 
     let tee_type = quote_builder.tee_type();
-
     if false {
-        let prover = Prover::new(kp.clone(), tee_type);
+        let prover = Prover::new(kp.clone(), mp.prover_registry, tee_type);
         kp.rotate().commit(U256::from_limbs_slice(&[1]));
         let data = std::fs::read(
             PathBuf::new()
@@ -121,13 +135,14 @@ async fn main() -> std::io::Result<()> {
     ));
 
     HttpServer::new(move || {
-        let prover = Prover::new(kp.clone(), tee_type);
+        let prover = Prover::new(kp.clone(), mp.prover_registry, tee_type);
 
         App::new()
             .app_data(JsonConfig::default().limit(100 << 20))
             .app_data(Data::new(prover))
             .service(gen_proof)
             .service(gen_proof_by_guest_input)
+            .service(get_proof)
     })
     .bind(mp.listen)?
     .run()

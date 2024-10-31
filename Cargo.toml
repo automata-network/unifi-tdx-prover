@@ -20,21 +20,22 @@ jsonrpsee-types = "0.23"
 jsonrpsee-http-client = "0.23"
 
 # revm = { version = "12.1.0", default-features = false, features = ["std", "c-kzg", "secp256k1", "blst","serde"] }
+raiko-core = { git = "https://github.com/PufferFinance/raiko", branch = "unifi" }
 raiko-lib = { git = "https://github.com/PufferFinance/raiko", branch = "unifi", features = ["std"] }
 
 # reth
-reth-primitives = { git = "https://github.com/taikoxyz/taiko-reth.git", branch = "v1.0.0-rc.2-taiko", default-features = false, features = [
+reth-primitives = { git = "https://github.com/PufferFinance/taiko-reth.git", branch = "unifi", default-features = false, features = [
     "alloy-compat",
     "taiko",
 ] }
-reth-evm-ethereum = { git = "https://github.com/taikoxyz/taiko-reth.git", branch = "v1.0.0-rc.2-taiko", default-features = false }
-reth-evm = { git = "https://github.com/taikoxyz/taiko-reth.git", branch = "v1.0.0-rc.2-taiko", default-features = false }
-reth-rpc-types = { git = "https://github.com/taikoxyz/taiko-reth.git", branch = "v1.0.0-rc.2-taiko", default-features = false }
-reth-revm = { git = "https://github.com/taikoxyz/taiko-reth.git", branch = "v1.0.0-rc.2-taiko", default-features = false }
-reth-chainspec = { git = "https://github.com/taikoxyz/taiko-reth.git", branch = "v1.0.0-rc.2-taiko", default-features = false, features = [
+reth-evm-ethereum = { git = "https://github.com/PufferFinance/taiko-reth.git", branch = "unifi", default-features = false }
+reth-evm = { git = "https://github.com/PufferFinance/taiko-reth.git", branch = "unifi", default-features = false }
+reth-rpc-types = { git = "https://github.com/PufferFinance/taiko-reth.git", branch = "unifi", default-features = false }
+reth-revm = { git = "https://github.com/PufferFinance/taiko-reth.git", branch = "unifi", default-features = false }
+reth-chainspec = { git = "https://github.com/PufferFinance/taiko-reth.git", branch = "unifi", default-features = false, features = [
     "taiko",
 ] }
-reth-provider = { git = "https://github.com/taikoxyz/taiko-reth.git", branch = "v1.0.0-rc.2-taiko", default-features = false }
+reth-provider = { git = "https://github.com/PufferFinance/taiko-reth.git", branch = "unifi", default-features = false }
 
 # risc zero
 risc0-zkvm = { version = "1.0.1", features = ["prove", "getrandom"] }
@@ -179,6 +180,3 @@ revm-precompile = { git = "https://github.com/taikoxyz/revm.git", branch = "v36-
 secp256k1 = { git = "https://github.com/CeciliaZ030/rust-secp256k1", branch = "sp1-patch" }
 blst = { git = "https://github.com/CeciliaZ030/blst.git", branch = "v0.3.12-serialize" }
 alloy-serde = { git = "https://github.com/CeciliaZ030/alloy.git", branch = "v0.1.4-fix"}
-
-#[patch.'https://github.com/taikoxyz/raiko']
-#raiko-lib = { path = "../raiko/lib" }
