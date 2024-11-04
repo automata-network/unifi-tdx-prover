@@ -56,7 +56,7 @@
     },
     "l1_contract": "0x12d30f3584ee969c4131b7d5dcaee763a378afd9",
     "l2_contract": "0x9A7fe8e9852c684DD03ce9caEa003F5Fc0a3135b",
-    "rpc": "http://localhost:8545",
+    "rpc": "http://35.207.160.13:8545",
     "beacon_rpc": null,
     "verifier_address_forks": {
       "HEKLA": {
