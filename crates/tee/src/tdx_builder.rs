@@ -119,7 +119,7 @@ impl ReportBuilder for TdxQuoteBuilder {
     }
 
     fn tee_type(&self) -> U256 {
-        U256::from_limbs_slice(&[1])
+        U256::from_limbs_slice(&[201])
     }
 }
 
