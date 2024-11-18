@@ -1,6 +1,5 @@
-use raiko_lib::builder::UNIFI_TESTNET;
 use reth_chainspec::{
-    ChainSpec, ChainSpecBuilder, HOLESKY, MAINNET, TAIKO_A7, TAIKO_DEV, TAIKO_MAINNET,
+    ChainSpec, ChainSpecBuilder, HOLESKY, MAINNET, TAIKO_A7, TAIKO_DEV, TAIKO_MAINNET, UNIFI_TESTNET
 };
 use std::{collections::BTreeMap, sync::Arc};
 
