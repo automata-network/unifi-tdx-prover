@@ -61,7 +61,7 @@ async fn main() -> std::io::Result<()> {
     }
     let eth = base::Eth::dial(&app.l1_endpoint, Some(&app.private_key)).unwrap();
 
-    let registry = base::ProverRegistry::new(eth, app.prover_registry);
+    let registry = base::ProverRegistry::new(eth, app.prover_registry, Some(Duration::from_secs(60)));
 
     let client = Client::default();
     let mut input: ProofRequest =

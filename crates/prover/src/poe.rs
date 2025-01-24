@@ -5,7 +5,7 @@ use raiko_lib::primitives::keccak::keccak;
 use reth_primitives::{Address, Bytes, U256};
 use serde::{Deserialize, Serialize};
 
-use crate::{meta_hash, Pob};
+use crate::{meta_hash, Pob, ProveError};
 
 alloy_sol_types::sol! {
     #[derive(Default, Debug, Deserialize, Serialize)]
@@ -70,5 +70,43 @@ impl Poe {
             teeType: tee_type,
             signature: sig.into(),
         }
+    }
+
+    // the blockmeta we pick the last block inside the pob
+    // the parent_hash we pick the first block inside the poe
+    // the block_hash we pick the last block inside the poe
+    pub fn sign_multi(
+        poes: &[Poe],
+        pobs: &[Pob],
+        id: U256,
+        prover_registry: Address,
+        new_instance: Address,
+        sk: &SecretKey,
+        tee_type: U256,
+    ) -> Result<SignedPoe, ProveError> {
+        if poes.len() != pobs.len() || poes.len() == 0 {
+            return Err(ProveError::MissingPoe);
+        }
+        let last_pob = &pobs[pobs.len()-1];
+        let mut aggregated_poe = poes[poes.len()-1].clone();
+        for idx in 1..poes.len() {
+            let cur_poe = &poes[idx];
+            let prev_poe = &poes[idx];
+            if cur_poe.parent_hash != prev_poe.block_hash {
+                return Err(ProveError::BlockHashMismatch{ idx, cur: cur_poe.clone(), prev: prev_poe.clone()});
+            }
+        }
+        aggregated_poe.parent_hash = poes[0].parent_hash;
+        let sig = Keypair::sign_digest_ecdsa(
+            sk,
+            keccak(aggregated_poe.signed_msg(last_pob, prover_registry, new_instance)),
+        );
+        Ok(SignedPoe {
+            poe: aggregated_poe,
+            id,
+            new_instance,
+            teeType: tee_type,
+            signature: sig.into(),
+        })
     }
 }

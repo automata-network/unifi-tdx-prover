@@ -25,6 +25,11 @@ pub struct ProofRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MultiProofRequest {
+    pub input: Vec<ProofInput>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProofInput {
     pub l2_block: Block,
     pub parent_header: Header,

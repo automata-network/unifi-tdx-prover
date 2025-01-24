@@ -9,3 +9,6 @@ pub use mock_builder::*;
 
 mod agent_service;
 pub use agent_service::*;
+
+mod ima;
+pub use ima::*;

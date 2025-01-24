@@ -11,3 +11,6 @@ pub use keypair::*;
 
 mod base64;
 pub use base64::*;
+
+mod thread;
+pub use thread::*;

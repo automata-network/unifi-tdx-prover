@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use alloy::{
     primitives::{Address, U256},
     rpc::types::TransactionReceipt,
@@ -5,12 +7,13 @@ use alloy::{
 };
 use ProverRegistryStub::{Proof, ProverRegistryStubErrors};
 
-use crate::{Eth, EthError};
+use crate::{Eth, EthError, MutexEth};
 
 #[derive(Clone)]
 pub struct ProverRegistry {
-    eth: Eth,
+    eth: MutexEth,
     contract: Address,
+    wait_timeout: Option<Duration>,
 }
 
 pub use ProverRegistryStub::{registerCall as RegisterCall, ReportData};
@@ -38,18 +41,22 @@ impl From<EthError> for RegistryError {
 }
 
 impl ProverRegistry {
-    pub fn new(eth: Eth, contract: Address) -> Self {
-        Self { eth, contract }
+    pub fn new(eth: Eth, contract: Address, register_timeout: Option<Duration>) -> Self {
+        Self {
+            eth: MutexEth::new(eth),
+            contract,
+            wait_timeout: register_timeout,
+        }
     }
 
     pub async fn chain_id(&self) -> Result<u64, RegistryError> {
         let call = ProverRegistryStub::uniFiChainIdCall {};
-        Ok(self.eth.call(self.contract, &call).await?._0)
+        Ok(self.eth.get().call(self.contract, &call).await?._0)
     }
 
     pub async fn attest_validity_seconds(&self) -> Result<u64, RegistryError> {
         let call = ProverRegistryStub::attestValiditySecondsCall {};
-        Ok(self.eth.call(self.contract, &call).await?._0.to())
+        Ok(self.eth.get().call(self.contract, &call).await?._0.to())
     }
 
     pub fn address(&self) -> Address {
@@ -73,9 +80,19 @@ impl ProverRegistry {
 
         let call = report.into();
 
-        let tx = self.eth.transact(self.contract, &call).await?;
+        let eth = self.eth.get();
+
+        let tx = eth
+            .transact(self.contract, &call)
+            .await?
+            .with_timeout(self.wait_timeout.clone());
+
         log::info!("[register] waiting receipt for: {:?}", tx.tx_hash());
-        let receipt = tx.get_receipt().await.map_err(EthError::from)?;
+        let receipt = tx
+            .get_receipt()
+            .await
+            .map_err(self.eth.reset_if_error())
+            .map_err(EthError::from)?;
 
         let instance_add = Self::get_event::<InstanceAdded>(&receipt)
             .ok_or(RegistryError::MissingInstanceIdOnRegister)?;
@@ -91,7 +108,8 @@ impl ProverRegistry {
         use ProverRegistryStub::*;
 
         let call = verifyProofsCall { _proofs: proofs };
-        let tx = self.eth.transact(self.contract, &call).await?;
+        let eth = self.eth.get();
+        let tx = eth.transact(self.contract, &call).await?;
         log::info!("[verify_proofs] waiting receipt for: {:?}", tx.tx_hash());
         let receipt = tx.get_receipt().await.map_err(EthError::from)?;
         log::info!("receipt: {:?}", receipt);

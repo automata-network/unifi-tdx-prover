@@ -1,6 +1,6 @@
 use std::{
     path::PathBuf,
-    time::{Duration, SystemTime},
+    time::{Duration, Instant, SystemTime},
 };
 
 use actix_web::{
@@ -12,7 +12,7 @@ use actix_web::{
 use alloy::primitives::{Address, U256};
 use base::{Eth, Keypair, ProverRegistry};
 use clap::Parser;
-use prover::{guest_input_to_proof_input, ProofRequest, Prover};
+use prover::{guest_input_to_proof_input, guest_input_to_proof_inputs, MultiProofRequest, ProofRequest, Prover, RpcMultiProofRequest};
 use prover::{GuestInput, ProverV1ApiServer};
 use raiko_core::interfaces::ProofRequest as RpcProofRequest;
 use serde::Deserialize;
@@ -39,16 +39,57 @@ async fn gen_proof(prover: Data<Prover>, req: Json<ProofRequest>) -> impl Respon
 
 #[post("/v1/get_proof")]
 async fn get_proof(prover: Data<Prover>, req: Json<RpcProofRequest>) -> impl Responder {
+    let req_data = serde_json::to_string(&req.0);
+    let block_number = req.block_number;
+    log::info!("req: {:?}", req_data);
+
+    let start = Instant::now();
+
     let guest_input = prover.get_proof(req.0).await;
+
+    let gen_proof_instant = Instant::now();
 
     let proof_request = ProofRequest {
         input: guest_input_to_proof_input(guest_input).unwrap(),
     };
 
-    match prover.prove(proof_request) {
+    let result = match prover.prove(proof_request) {
         Ok(n) => HttpResponse::Ok().json(n),
-        Err(err) => HttpResponse::BadRequest().json(err),
-    }
+        Err(err) => {
+            log::error!("err: {:?}", err);
+            HttpResponse::BadRequest().json(err)
+        }
+    };
+
+    log::info!("gen proof time: {:?}, proving time: {:?}, total: {:?}", gen_proof_instant-start, gen_proof_instant.elapsed(), start.elapsed());
+    result
+}
+
+#[post("/v1/get_proofs")]
+async fn get_proofs(prover: Data<Prover>, req: Json<RpcMultiProofRequest>) -> impl Responder {
+    let start = Instant::now();
+
+    let guest_inputs = match prover.get_proofs(req.0).await {
+        Ok(n) => n,
+        Err(err) => return HttpResponse::BadRequest().json(err),
+    };
+
+    let gen_proof_instant = Instant::now();
+
+    let proof_request = MultiProofRequest {
+        input: guest_input_to_proof_inputs(guest_inputs).unwrap(),
+    };
+
+    let result = match prover.prove_multi(proof_request).await {
+        Ok(n) => HttpResponse::Ok().json(n),
+        Err(err) => {
+            log::error!("err: {:?}", err);
+            HttpResponse::BadRequest().json(err)
+        }
+    };
+
+    log::info!("gen proof time: {:?}, proving time: {:?}, total: {:?}", gen_proof_instant-start, gen_proof_instant.elapsed(), start.elapsed());
+    result
 }
 
 #[derive(Debug, Parser, Deserialize)]
@@ -68,6 +109,10 @@ pub struct MultiProver {
     pub prover_registry: Address,
     #[clap(long, env = "LISTEN", default_value = "127.0.0.1:20300")]
     pub listen: String,
+    #[clap(long, default_value = "1800")]
+    pub attestation_pre_expire_secs: u64,
+    #[clap(long, default_value = "8")]
+    pub worker_num: usize,
 }
 
 impl MultiProver {
@@ -81,8 +126,11 @@ impl MultiProver {
         if self.prover_registry == Address::default() {
             self.prover_registry = rhs.prover_registry;
         }
-        if self.listen != "127.0.0.1:20300" {
+        if self.listen == "127.0.0.1:20300" && rhs.listen != "" {
             self.listen = rhs.listen
+        }
+        if self.attestation_pre_expire_secs == 1800 && rhs.attestation_pre_expire_secs > 0 {
+            self.attestation_pre_expire_secs = rhs.attestation_pre_expire_secs
         }
     }
 }
@@ -102,19 +150,19 @@ async fn main() -> std::io::Result<()> {
     let kp = Keypair::new();
 
     #[cfg(feature = "tdx")]
-    let quote_builder =
-        tee::TdxQuoteLocalAgentBuilder::new();
+    let quote_builder = tee::TdxQuoteLocalAgentBuilder::new();
     #[cfg(not(feature = "tdx"))]
     let quote_builder = tee::MockBuilder::new();
 
     let tee_type = quote_builder.tee_type();
     if false {
-        let prover = Prover::new(kp.clone(), mp.prover_registry, tee_type);
+        let prover = Prover::new(kp.clone(), mp.prover_registry, tee_type, mp.worker_num);
         kp.rotate().commit(U256::from_limbs_slice(&[1]));
         let data = std::fs::read(
             PathBuf::new()
                 .join("testdata")
-                .join("proof-request-taiko-mainnet-328837.json"),
+                .join("proof-request-unifi-testnet-48.json"),
+            // .join("proof-request-taiko-a7-848185.json"),
         )
         .unwrap();
         let data = serde_json::from_slice(&data).unwrap();
@@ -125,17 +173,19 @@ async fn main() -> std::io::Result<()> {
     }
 
     let client = base::Eth::dial(&mp.l1_endpoint, Some(&mp.private_key)).unwrap();
-    let registry = ProverRegistry::new(client.clone(), mp.prover_registry);
+    let register_timeout = Some(Duration::from_secs(120));
+    let registry = ProverRegistry::new(client.clone(), mp.prover_registry, register_timeout);
 
     let _attestation_loop_handle = spawn(attestation_loop(
         quote_builder,
         client,
         kp.clone(),
         registry,
+        mp.attestation_pre_expire_secs,
     ));
 
     HttpServer::new(move || {
-        let prover = Prover::new(kp.clone(), mp.prover_registry, tee_type);
+        let prover = Prover::new(kp.clone(), mp.prover_registry, tee_type, mp.worker_num);
 
         App::new()
             .app_data(JsonConfig::default().limit(100 << 20))
@@ -154,6 +204,7 @@ async fn attestation_loop<B: ReportBuilder>(
     client: Eth,
     kp: Keypair,
     registry: ProverRegistry,
+    attestation_pre_expire_secs: u64,
 ) {
     let err_retry = Duration::from_secs(5);
     loop {
@@ -192,8 +243,13 @@ async fn attestation_loop<B: ReportBuilder>(
             );
         }
         new_key.commit(registration.instance_id);
-        log::info!("registration successfully: {:?}", registration);
-        let next_attestation_time = registration.valid_until - 60;
+        let next_attestation_time = registration.valid_until - attestation_pre_expire_secs;
+
+        log::info!(
+            "registration successfully: {:?}, next attestation: {:?}",
+            registration,
+            next_attestation_time
+        );
 
         sleep_until(next_attestation_time).await
     }

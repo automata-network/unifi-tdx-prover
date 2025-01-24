@@ -109,6 +109,14 @@ pub fn guest_input_to_proof_input(input: GuestInput) -> Result<ProofInput, Strin
     })
 }
 
+pub fn guest_input_to_proof_inputs(inputs: Vec<GuestInput>) -> Result<Vec<ProofInput>, String> {
+    let mut output = Vec::with_capacity(inputs.len());
+    for input in inputs {
+        output.push(guest_input_to_proof_input(input)?);
+    }
+    Ok(output)
+}
+
 pub fn select_block_meta(block: &BlockProposedFork) -> BlockMetaDataFork {
     match block {
         BlockProposedFork::Nothing => BlockMetaDataFork::None,

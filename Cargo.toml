@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/base", "crates/prover", "crates/executor", "bin/*"]
+members = ["crates/base", "crates/prover", "crates/executor", "bin/multi-prover", "bin/guest-input-to-proof-request"]
 
 [workspace.package]
 edition = "2021"
