@@ -1,7 +1,0 @@
-{
-    "private_key": "ea6ce6260b0268438296823f01d95323743f0f4ca4cab4cc9627378cd708f514",
-    "l1_endpoint": "https://automata-testnet.alt.technology",
-    "prover_registry": "0x2a51D7d9b1704c77A84B2A67E40E3A9D09dA148b",
-    "prover_url": "http://127.0.0.1:20300",
-    "listen": "127.0.0.1:20300"
-}

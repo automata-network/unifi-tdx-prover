@@ -1,0 +1,8 @@
+{
+    "private_key": "",
+    "l1_endpoint": "https://1rpc.io/holesky",
+    "prover_registry": "0x7c2B88Bb08467669e6ee3ed604f07aB0D5E78F1a",
+    "worker_num": 4,
+    "attestation_pre_expire_secs": 1800,
+    "listen": "0.0.0.0:8080"
+}

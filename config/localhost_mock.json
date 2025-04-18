@@ -1,7 +1,0 @@
-{
-    "private_key": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-    "l1_endpoint": "http://localhost:8545",
-    "prover_registry": "0xE401FBb0d6828e9f25481efDc9dd18Da9E500983",
-    "prover_url": "http://127.0.0.1:20300",
-    "listen": "127.0.0.1:20300"
-}
