@@ -1,4 +1,13 @@
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/automata-network/automata-brand-kit/main/PNG/ATA_White%20Text%20with%20Color%20Logo.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/automata-network/automata-brand-kit/main/PNG/ATA_Black%20Text%20with%20Color%20Logo.png">
+    <img src="https://raw.githubusercontent.com/automata-network/automata-brand-kit/main/PNG/ATA_White%20Text%20with%20Color%20Logo.png" width="50%">
+  </picture>
+</div>
+
 # Unifi TDX Prover
+[![Unifi TDX Prover](https://img.shields.io/badge/Powered%20By-Automata-orange.svg)](https://github.com/automata-network)
 
 ## Architecture
 
@@ -88,3 +97,7 @@ $ cargo run --release --bin multi-prover -- -c config/localhost_mock.json
 $ cargo build --release --bin multi-prover --features tdx
 $ target/release/multi-prover -c config/holesky.json
 ```
+
+# See also
+
+* [unifi-mono](https://github.com/PufferFinance/unifi-mono)
