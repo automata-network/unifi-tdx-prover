@@ -6,7 +6,7 @@
 sequenceDiagram
   autonumber
 	  participant B as ProofBuilder API
-	  participant P as Automata Prover
+	  participant P as TDX Prover
 	  participant R as Prover Registry Contract
 
 P->>P: generate ephemeral key
