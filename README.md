@@ -1,4 +1,4 @@
-# unifi-tee-multi-prover
+# Unifi TDX Prover
 
 ## Architecture
 
