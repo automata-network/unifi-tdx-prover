@@ -9,6 +9,8 @@
 # Unifi TDX Prover
 [![Unifi TDX Prover](https://img.shields.io/badge/Powered%20By-Automata-orange.svg)](https://github.com/automata-network)
 
+Unifi TDX Prover is a prover running in the Intel TDX trusted execution environment, designed to provide TEE validity proofs for Unifi's atomicWithdrawal. It leverages hardware-backed security guarantees from TDX to achieve fast finality in transaction processing, ensuring both security and efficiency for rollup solutions.
+
 ## Architecture
 
 ```mermaid
